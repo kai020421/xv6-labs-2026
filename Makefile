@@ -188,6 +188,7 @@ UPROGS=\
         $U/_sleep\
         $U/_sixfive\
         $U/_find\
+        $U/_uptime\
 	$U/_echo\
 	$U/_forktest\
 	$U/_grep\
