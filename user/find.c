@@ -123,5 +123,8 @@ main(int argc, char *argv[])
   }
 
   find(argv[1], argv[2]);
+  int ticks = atoi(argv[1]);
+  pause(ticks);
   exit(0);
+};
 }
