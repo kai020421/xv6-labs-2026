@@ -1,65 +1,70 @@
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
-#include "kernel/fcntl.h"
 
-void memdump(char *fmt, char *data, int len);
+void memdump(char *fmt, char *data, int len) {
+  for (int i = 0; fmt[i] != '\0'; i++) {
+    char spec = fmt[i];
 
-int
-main(int argc, char *argv[])
-{
-  if (argc == 1) {
-    printf("Example 1:\n");
-    int a[2] = {61810, 2026};
-    memdump("ii", (char *)a, sizeof(a));
+    if (spec == 'i' && len < 4) goto not_enough;
+    if (spec == 'p' && len < 8) goto not_enough;
+    if (spec == 'h' && len < 2) goto not_enough;
+    if (spec == 'c' && len < 1) goto not_enough;
+    if (spec == 's' && len < 8) goto not_enough;
 
-    printf("Example 2:\n");
-    memdump("S", "a string", sizeof("a string"));
-
-    printf("Example 3:\n");
-    char *s = "another";
-    memdump("s", (char *)&s, sizeof(s));
-
-    struct sss {
-      char *ptr;
-      int num1;
-      short num2;
-      char byte;
-      char bytes[8];
-    } example;
-
-    example.ptr = "hello";
-    example.num1 = 1819438967;
-    example.num2 = 100;
-    example.byte = 'z';
-    strcpy(example.bytes, "xyzzy");
-
-    printf("Example 4:\n");
-    memdump("pihcS", (char *)&example, sizeof(example));
-
-    printf("Example 5:\n");
-    memdump("sccccc", (char *)&example, sizeof(example));
-  } else if (argc == 2) {
-    // format in argv[1], up to 512 bytes of data from standard input.
-    char data[512];
-    int n = 0;
-    memset(data, '\0', sizeof(data));
-    while (n < sizeof(data)) {
-      int nn = read(0, data + n, sizeof(data) - n);
-      if (nn <= 0)
-        break;
-      n += nn;
+    switch (spec) {
+    case 'i': {
+      int val;
+      memmove(&val, data, 4);
+      printf("%%d\n", val);
+      data += 4;
+      len -= 4;
+      break;
     }
-    memdump(argv[1], data, n);
-  } else {
-    printf("Usage: memdump [format]\n");
-    exit(1);
+    case 'p': {
+      uint64 val;
+      memmove(&val, data, 8);
+      printf("%%p\n", (void *)val);
+      data += 8;
+      len -= 8;
+      break;
+    }
+    case 'h': {
+      short val;
+      memmove(&val, data, 2);
+      printf("%%d\n", val);
+      data += 2;
+      len -= 2;
+      break;
+    }
+    case 'c': {
+      printf("%%c\n", *data);
+      data += 1;
+      len -= 1;
+      break;
+    }
+    case 's': {
+      char *str_ptr;
+      memmove(&str_ptr, data, 8);
+      printf("%%s\n", str_ptr);
+      data += 8;
+      len -= 8;
+      break;
+    }
+    case 'S': {
+      for (int k = 0; k < len; k++) {
+        if (data[k] == '\0') break;
+        printf("%%c", data[k]);
+      }
+      printf("\n");
+      return;
+    }
+    default:
+      break;
+    }
   }
-  exit(0);
-}
+  return;
 
-void
-memdump(char *fmt, char *data, int len)
-{
-  // Your code here.  `data` holds `len` valid bytes.
-
+not_enough:
+  printf("memdump: not enough data for '%%c'\n", fmt[i]);
 }
