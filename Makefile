@@ -186,6 +186,7 @@ UPROGS=\
 	$U/_cat\
         $U/_sleep\
         $U/_sixfive\
+	$U/_memtest\
 	$U/_echo\
 	$U/_forktest\
 	$U/_grep\
@@ -281,7 +282,7 @@ UEXTRA=
 ifeq ($(LAB),util)
 	UEXTRA += user/findtest.sh
 	UEXTRA += user/sixfive.txt
-	UPROGS += $U/_memdump
+	UPROGS += $U/_memtest
 endif
 ifeq ($(LAB),syscall)
 	UEXTRA += user/exec.sh
