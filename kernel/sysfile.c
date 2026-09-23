@@ -337,7 +337,10 @@ sys_open(void)
   argint(1, &omode);
   if ((n = argstr(0, path, MAXPATH)) < 0)
     return -1;
-
+struct proc *p = myproc();
+  if(p->sandbox_mask && strncmp(path, p->sandbox_path, strlen(p->sandbox_path)) == 0) {
+    return -1;
+  }
   begin_op();
 
   if (omode & O_CREATE) {
