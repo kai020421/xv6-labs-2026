@@ -1,0 +1,14 @@
+1. Which function called syscall?
+#0 syscall at kernel/syscall.c:138, called from #1 argstr at kernel/syscall.c:81.
+
+2. What is the value of p->trapframe->a7 and what does that value represent?
+Value: <optimized out>. It represents the system call number.
+
+3. What was the previous mode that the CPU was in?
+User mode (SPP bit in sstatus was 0).
+
+4. Write down the assembly instruction the kernel is panicing at. Which register corresponds to the variable num?
+Load instruction (ld/lw), register a0 or t0.
+
+5. What is the name of the process that was running when the kernel paniced? What is its process id (pid)?
+Name: init, PID: 1.
