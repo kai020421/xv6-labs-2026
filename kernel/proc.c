@@ -274,7 +274,9 @@ kfork(void)
     return -1;
   }
   np->sz = p->sz;
-
+  // Copy sandbox mask and path from parent to child
+  np->sandbox_mask = p->sandbox_mask;
+  safestrcpy(np->sandbox_path, p->sandbox_path, sizeof(p->sandbox_path));
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 
