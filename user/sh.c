@@ -1,8 +1,13 @@
 // Shell.
 
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
+
+#define MAX_HISTORY 10
+char history[MAX_HISTORY][100];
+int history_count = 0;
 
 // Parsed command representation
 #define EXEC  1
@@ -134,10 +139,15 @@ runcmd(struct cmd *cmd)
 int
 getcmd(char *buf, int nbuf)
 {
-  write(2, "$ ", 2);
+struct stat st;
+
+  if(fstat(0, &st) < 0 || st.type != T_FILE){
+    fprintf(2, "$ ");
+  }
+
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
-  if (buf[0] == 0) // EOF
+  if(buf[0] == 0) // EOF
     return -1;
   return 0;
 }
@@ -155,25 +165,54 @@ main(void)
       break;
     }
   }
-
-  // Read and run input commands.
+// Read and run input commands.
   while (getcmd(buf, sizeof(buf)) >= 0) {
     char *cmd = buf;
     while (*cmd == ' ' || *cmd == '\t')
       cmd++;
-    if (*cmd == '\n') // is a blank command
+if (*cmd == '\n') // is a blank command
       continue;
+
+    // Save non-blank command to history buffer
+    if (history_count < MAX_HISTORY) {
+      int len = strlen(cmd);
+      if (len > 0 && cmd[len - 1] == '\n')
+        cmd[len - 1] = 0;
+      
+      int i = 0;
+      while (cmd[i] != 0 && i < 99) {
+        history[history_count][i] = cmd[i];
+        i++;
+      }
+      history[history_count][i] = 0;
+      history_count++;
+      
+      cmd[len - 1] = '\n';
+    }
+
     if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
-      // Chdir must be called by the parent, not the child.
       cmd[strlen(cmd) - 1] = 0; // chop \n
       if (chdir(cmd + 3) < 0)
         fprintf(2, "cannot cd %s\n", cmd + 3);
-    } else {
-      if (fork1() == 0)
-        runcmd(parsecmd(cmd));
+    } else if (cmd[0] == 'w' && cmd[1] == 'a' && cmd[2] == 'i' && cmd[3] == 't' && (cmd[4] == ' ' || cmd[4] == '\n' || cmd[4] == 0)) {
       wait(0);
+    } else if (cmd[0] == 'h' && cmd[1] == 'i' && cmd[2] == 's' && cmd[3] == 't' && cmd[4] == 'o' && cmd[5] == 'r' && cmd[6] == 'y' && (cmd[7] == ' ' || cmd[7] == '\n' || cmd[7] == 0)) {
+      for (int i = 0; i < history_count; i++) {
+        printf("%d %s\n", i + 1, history[i]);
+      }
+    } else {
+      struct cmd *c = parsecmd(cmd);
+      if (c->type == BACK) {
+        struct backcmd *bcmd = (struct backcmd*)c;
+        if (fork1() == 0)
+          runcmd(bcmd->cmd);
+      } else {
+        if (fork1() == 0)
+          runcmd(c);
+        wait(0);
+      }
     }
-  }
+}
   exit(0);
 }
 
